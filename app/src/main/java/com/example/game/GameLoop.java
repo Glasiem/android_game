@@ -56,8 +56,6 @@ public class GameLoop extends Thread {
                     updateCount++;
                     game.draw(canvas);
                 }
-                surfaceHolder.unlockCanvasAndPost(canvas);
-                frameCount++;
             }
             catch (IllegalArgumentException e){
                 e.printStackTrace();
@@ -106,4 +104,15 @@ public class GameLoop extends Thread {
             }
         }
     }
+
+    public void stopLoop() {
+        isRunning = false;
+        try{
+            join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 }

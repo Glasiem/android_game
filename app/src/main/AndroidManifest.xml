@@ -12,7 +12,9 @@
         android:theme="@style/Theme.Game"
         tools:targetApi="31" >
         <activity android:name="com.example.game.MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="landscape"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
         <intent-filter>
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
