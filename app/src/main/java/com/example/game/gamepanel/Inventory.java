@@ -7,6 +7,7 @@ import com.example.game.gameobjects.GameObject;
 import java.util.ArrayList;
 
 public class Inventory {
+    public static final int ITEM_SIZE = 64;
     public ArrayList<GameObject> inventoryObjects = new ArrayList();
 
     public void remove(int ordinal) {

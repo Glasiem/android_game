@@ -2,6 +2,7 @@ package com.example.game;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -22,7 +23,6 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
     private final Inventory inventory;
     private GameLoop gameLoop;
     private ArrayList<GameObject> gameObjects = new ArrayList();
-    private ArrayList<GameObject> sceneObjects = new ArrayList();
     private GameObject handObject;
     private ItemFrame itemFrame;
 
@@ -38,7 +38,7 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
         performance = new Performance(gameLoop, context);
         gameScene = new GameScene(context, 1);
         initGameObjects();
-        initSceneObjects();
+        gameScene.initSceneObjects(gameObjects);
         inventory = new Inventory();
         inventory.initInventoryObjects(gameObjects);
         handObject = gameObjects.get(0);
@@ -47,16 +47,10 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
         setFocusable(true);
     }
 
-    private void initSceneObjects() {
-        for (GameObject object: gameObjects) {
-            if(object.getSceneID() == GameScene.SceneType.ID_START.ordinal()) sceneObjects.add(object);
-        }
-    }
-
     private void initGameObjects() {
         gameObjects.add(new GameObject(getContext(), GameObject.ObjectType.ID_HAND.ordinal(),
                 GameScene.SceneType.ID_INVENTORY.ordinal(),
-                80, 950, 64, 64));
+                80, 950, Inventory.ITEM_SIZE, Inventory.ITEM_SIZE));
         gameObjects.add(new GameObject(getContext(), GameObject.ObjectType.ID_KNIFE.ordinal(),
                 GameScene.SceneType.ID_START.ordinal(),
                 500, 300, 200, 80));
@@ -66,6 +60,12 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
         gameObjects.add(new GameObject(getContext(), GameObject.ObjectType.ID_ROPE.ordinal(),
                 GameScene.SceneType.ID_START.ordinal(),
                 1400, 50, 800, 20));
+        gameObjects.add(new GameObject(getContext(), GameObject.ObjectType.ID_TO_LEFT.ordinal(),
+                GameScene.SceneType.ID_START.ordinal(),
+                20, 450, 80, 140));
+        gameObjects.add(new GameObject(getContext(), GameObject.ObjectType.ID_TO_RIGHT.ordinal(),
+                GameScene.SceneType.ID_LEFT.ordinal(),
+                1653, 450, 80, 140));
     }
 
     @Override
@@ -75,92 +75,107 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
             case MotionEvent.ACTION_DOWN:
                 for (GameObject object: gameObjects) {
                     if (object.isPressed(event.getX(),event.getY())){
-                        switch (GameObject.ObjectType.values()[object.getObjectID()]){
-                            case ID_HAND:
-                            case ID_KNIFE_INV:
-                                handObject = object;
-                                itemFrame.posUpdate(object.getPosX());
-                                break;
-                            case ID_KEY_INV:
-                                if (handObject.getObjectID()==GameObject.ObjectType.ID_ROPE_INV.ordinal()){
-
-                                    handObject.setObjectID(GameObject.ObjectType.ID_KEY_ON_A_ROPE.ordinal());
-
-                                    inventory.remove(object);
-                                    gameObjects.remove(object);
-
-                                    inventory.sort();
-
-                                }else {
-
-                                    handObject = object;
-                                    itemFrame.posUpdate(object.getPosX());
-
+                        switch (GameScene.SceneType.values()[object.getSceneID()]){
+                            case ID_INVENTORY:
+                                switch (GameObject.ObjectType.values()[object.getObjectID()]){
+                                    case ID_HAND:
+                                    case ID_KNIFE_INV:
+                                    case ID_KEY_ON_A_ROPE:
+                                        changeHandObject(object);
+                                        break;
+                                    case ID_KEY_INV:
+                                        objectsCombine(object,GameObject.ObjectType.ID_ROPE_INV.ordinal(),
+                                                GameObject.ObjectType.ID_KEY_ON_A_ROPE.ordinal());
+                                        break;
+                                    case ID_ROPE_INV:
+                                        objectsCombine(object,GameObject.ObjectType.ID_KEY_INV.ordinal(),
+                                                GameObject.ObjectType.ID_KEY_ON_A_ROPE.ordinal());
+                                        break;
                                 }
                                 break;
-                            case ID_ROPE_INV:
-                                if (handObject.getObjectID()==GameObject.ObjectType.ID_KEY_INV.ordinal()){
-
-                                    handObject.setObjectID(GameObject.ObjectType.ID_KEY_ON_A_ROPE.ordinal());
-
-                                    inventory.remove(object);
-                                    gameObjects.remove(object);
-
-                                    inventory.sort();
-
-                                }else {
-
-                                    handObject = object;
-                                    itemFrame.posUpdate(object.getPosX());
-
+                            case ID_START:
+                                switch (GameObject.ObjectType.values()[object.getObjectID()]){
+                                    case  ID_KNIFE:
+                                        objectInteract(object,GameObject.ObjectType.ID_HAND.ordinal(),
+                                                GameObject.ObjectType.ID_KNIFE_INV.ordinal(),
+                                                GameScene.SceneType.ID_INVENTORY.ordinal());
+                                        break;
+                                    case  ID_KEY:
+                                        objectInteract(object,GameObject.ObjectType.ID_HAND.ordinal(),
+                                                GameObject.ObjectType.ID_KEY_INV.ordinal(),
+                                                GameScene.SceneType.ID_INVENTORY.ordinal());
+                                        break;
+                                    case  ID_ROPE:
+                                        if(objectInteract(object,GameObject.ObjectType.ID_KNIFE_INV.ordinal(),
+                                                GameObject.ObjectType.ID_ROPE_INV.ordinal(),
+                                                GameScene.SceneType.ID_INVENTORY.ordinal())){
+                                            objectDelete();
+                                        }
+                                        break;
+                                    case ID_TO_LEFT:
+                                        gameScene.setSceneID(GameScene.SceneType.ID_LEFT.ordinal());
+                                        gameScene.initSceneObjects(gameObjects);
                                 }
                                 break;
-                            case  ID_KNIFE:
-                                if (handObject.getObjectID()==GameObject.ObjectType.ID_HAND.ordinal()) {
-
-                                    object.toInventory(inventory.inventoryObjects.size());
-                                    object.setObjectID(GameObject.ObjectType.ID_KNIFE_INV.ordinal());
-                                    object.setSceneID(GameScene.SceneType.ID_INVENTORY.ordinal());
-                                    inventory.add(object);
-
-                                    sceneObjects.remove(object);
+                            case ID_LEFT:
+                                switch (GameObject.ObjectType.values()[object.getObjectID()]){
+                                    case ID_TO_RIGHT:
+                                        gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_START.ordinal());
                                 }
-                                break;
-                            case  ID_KEY:
-                                if (handObject.getObjectID()==GameObject.ObjectType.ID_HAND.ordinal()) {
-
-                                    object.toInventory(inventory.inventoryObjects.size());
-                                    object.setObjectID(GameObject.ObjectType.ID_KEY_INV.ordinal());
-                                    object.setSceneID(GameScene.SceneType.ID_INVENTORY.ordinal());
-                                    inventory.add(object);
-
-                                    sceneObjects.remove(object);
-                                }
-                                break;
-                            case  ID_ROPE:
-                                if (handObject.getObjectID()==GameObject.ObjectType.ID_KNIFE_INV.ordinal()) {
-
-                                    object.toInventory(inventory.inventoryObjects.size());
-                                    object.setObjectID(GameObject.ObjectType.ID_ROPE_INV.ordinal());
-                                    object.setSceneID(GameScene.SceneType.ID_INVENTORY.ordinal());
-                                    inventory.add(object);
-
-                                    sceneObjects.remove(object);
-
-                                    inventory.remove(GameObject.ObjectType.ID_KNIFE_INV.ordinal());
-                                    gameObjects.removeIf(obj -> obj.getObjectID()==GameObject.ObjectType.ID_KNIFE_INV.ordinal());
-
-                                    handObject = inventory.inventoryObjects.get(0);
-                                    inventory.sort();
-                                }
-                                break;
                         }
+
                         break;
                     }
                 }
 
         }
         return super.onTouchEvent(event);
+    }
+
+    private void changeHandObject(GameObject object) {
+        handObject = object;
+        itemFrame.posUpdate(object.getPosX());
+    }
+
+    private void objectDelete() {
+        inventory.remove(handObject.getObjectID());
+        gameObjects.removeIf(obj -> obj.getObjectID()==handObject.getObjectID());
+
+        inventory.sort();
+        changeHandObject(inventory.inventoryObjects.get(0));
+    }
+
+    private boolean objectInteract(GameObject object, int neededHandID, int changedItemID, int changedItemSceneID) {
+        if (handObject.getObjectID()==neededHandID) {
+
+            object.toInventory(inventory.inventoryObjects.size());
+            object.setObjectID(changedItemID);
+            object.setSceneID(changedItemSceneID);
+            inventory.add(object);
+
+            gameScene.remove(object);
+
+            return true;
+        }
+        return false;
+    }
+
+    private void objectsCombine(GameObject object, int neededHandID, int changedItemID) {
+        if (handObject.getObjectID()==neededHandID){
+
+            handObject.setObjectID(changedItemID);
+
+            inventory.remove(object);
+            gameObjects.remove(object);
+
+            inventory.sort();
+            itemFrame.posUpdate(handObject.getPosX());
+
+        }else {
+
+            changeHandObject(object);
+
+        }
     }
 
     @Override
@@ -185,9 +200,6 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
     public void draw(Canvas canvas) {
         super.draw(canvas);
         gameScene.draw(canvas);
-        for (GameObject object: sceneObjects) {
-            object.draw(canvas);
-        }
         itemFrame.draw(canvas);
         inventory.draw(canvas);
         performance.draw(canvas);

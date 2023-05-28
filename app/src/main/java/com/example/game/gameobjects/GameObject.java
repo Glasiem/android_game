@@ -8,6 +8,9 @@ import android.graphics.Rect;
 import androidx.core.content.ContextCompat;
 
 import com.example.game.R;
+import com.example.game.gamepanel.Inventory;
+
+import java.util.ArrayList;
 
 public class GameObject {
     private Context context;
@@ -20,7 +23,9 @@ public class GameObject {
         ID_KEY_INV,
         ID_ROPE,
         ID_ROPE_INV,
-        ID_KEY_ON_A_ROPE
+        ID_KEY_ON_A_ROPE,
+        ID_TO_LEFT,
+        ID_TO_RIGHT
     }
     private int objectID;
     private int sceneID;
@@ -73,8 +78,8 @@ public class GameObject {
 
     public void toInventory(int invPos){
         sceneID = GameScene.SceneType.ID_INVENTORY.ordinal();
-        width = 64;
-        height = 64;
+        width = Inventory.ITEM_SIZE;
+        height = Inventory.ITEM_SIZE;
         posX = 80 + 80*invPos;
         posY = 950;
     }
