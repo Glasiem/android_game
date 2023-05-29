@@ -48,6 +48,25 @@ public class TileMap {
         }
     }
 
+    public void changeTile(int row, int column, int newTileId){
+        tileMap[row][column] = new Tile(context, getRectByIndex(row,column), newTileId);
+        updateBitmap();
+    }
+
+    public void resetBitmap(){
+        initTileMap();
+        updateBitmap();
+    }
+
+    private void updateBitmap(){
+        Canvas mapCanvas = new Canvas(mapBitmap);
+        for (int row = 0; row < mapLayout.NUMBER_OF_ROWS; row++) {
+            for (int column = 0; column < mapLayout.NUMBER_OF_COLUMNS; column++) {
+                tileMap[row][column].draw(mapCanvas);
+            }
+        }
+    }
+
     private Rect getRectByIndex(int row, int column) {
         return new Rect(
                 column*MapLayout.TILE_SIZE,
@@ -62,5 +81,9 @@ public class TileMap {
         int color = ContextCompat.getColor(context, R.color.black);
         paint.setColor(color);
         canvas.drawBitmap(mapBitmap, gameDisplay.getGameRect(), gameDisplay.DISPLAY_RECT,paint);
+    }
+
+    public Tile[][] getTileMap() {
+        return tileMap;
     }
 }

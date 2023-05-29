@@ -2,7 +2,6 @@ package com.example.game;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -52,7 +51,7 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
         handObject = gameObjects.get(0);
         itemFrame = new ItemFrame(context, handObject.getPosX(),handObject.getPosY(),handObject.getHeight(),handObject.getWidth());
         joystick = new Joystick(300,500,200,70,context);
-        player = new Player(1100,450,32,joystick,context);
+        player = new Player(1100,450,30,joystick,context);
         gameDisplay = new GameDisplay(600,200,1600,700,player);
         tileMap = new TileMap(context,player);
 
@@ -77,6 +76,9 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
                 20, 450, 80, 140));
         gameObjects.add(new GameObject(getContext(), GameObject.ObjectType.ID_TO_RIGHT.ordinal(),
                 GameScene.SceneType.ID_LEFT.ordinal(),
+                1653, 450, 80, 140));
+        gameObjects.add(new GameObject(getContext(), GameObject.ObjectType.ID_TO_RIGHT.ordinal(),
+                GameScene.SceneType.ID_LEFT_UPD.ordinal(),
                 1653, 450, 80, 140));
     }
 
@@ -131,15 +133,21 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
                                         case ID_TO_LEFT:
                                             gameScene.setSceneID(GameScene.SceneType.ID_LEFT.ordinal());
                                             gameScene.initSceneObjects(gameObjects);
+                                            break;
+                                        case ID_TO_LEFT_UPD:
+                                            gameScene.setSceneID(GameScene.SceneType.ID_LEFT_UPD.ordinal());
+                                            gameScene.initSceneObjects(gameObjects);
+                                            break;
                                     }
                                     break;
+                                case ID_LEFT_UPD:
                                 case ID_LEFT:
                                     switch (GameObject.ObjectType.values()[object.getObjectID()]) {
                                         case ID_TO_RIGHT:
                                             gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_START.ordinal());
                                     }
+                                    break;
                             }
-
                             break;
                         }
                     }
@@ -186,6 +194,16 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
             return true;
         }
         return false;
+    }
+
+    private void objectChange(int objectID, int changedItemID, int changedItemSceneID){
+        for (GameObject object: gameObjects) {
+            if (object.getObjectID()==objectID){
+                object.setObjectID(changedItemID);
+                object.setSceneID(changedItemSceneID);
+                break;
+            }
+        }
     }
 
     private void objectsCombine(GameObject object, int neededHandID, int changedItemID) {
@@ -239,9 +257,17 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void update() {
-        joystick.update();
-        player.update();
-        gameDisplay.update();
+        if (gameScene.getSceneID()== GameScene.SceneType.ID_LEFT.ordinal()) {
+            joystick.update();
+            player.update(tileMap, gameDisplay);
+            gameDisplay.update();
+            if(player.isLabyrinthCompleted()){
+                gameScene.sceneChange(gameObjects,GameScene.SceneType.ID_LEFT_UPD.ordinal());
+                objectChange(GameObject.ObjectType.ID_TO_LEFT.ordinal(),
+                        GameObject.ObjectType.ID_TO_LEFT_UPD.ordinal(),
+                        GameScene.SceneType.ID_START.ordinal());
+            }
+        }
     }
 
     public void pause() {

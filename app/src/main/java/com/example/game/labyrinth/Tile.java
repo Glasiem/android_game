@@ -63,6 +63,8 @@ public class Tile {
         return tileID;
     }
 
+
+
     public void draw(Canvas canvas){
         canvas.drawRect(mapLocationRect, tilePaint);
     }

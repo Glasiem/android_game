@@ -13,8 +13,8 @@ public class GameDisplay {
     private int displayCenterY;
     private double offsetX;
     private double offsetY;
-    private double mapStartToPlayerStartOffsetX;
-    private double mapStartToPlayerStartOffsetY;
+    public final double mapStartToPlayerStartOffsetX;
+    public final double mapStartToPlayerStartOffsetY;
 
     public GameDisplay(int left, int top, int right, int bottom, Player centerObject) {
         this.displayWidth = right-left;
