@@ -25,6 +25,7 @@ public class GameObject {
         ID_ROPE_INV,
         ID_KEY_ON_A_ROPE,
         ID_TO_LEFT,
+        ID_TO_LEFT_UPD,
         ID_TO_RIGHT
     }
     private int objectID;

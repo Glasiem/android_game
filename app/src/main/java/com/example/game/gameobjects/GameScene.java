@@ -24,7 +24,8 @@ public class GameScene {
     public enum SceneType{
         ID_INVENTORY,
         ID_START,
-        ID_LEFT
+        ID_LEFT,
+        ID_LEFT_UPD
     }
     private int sceneID;
 
