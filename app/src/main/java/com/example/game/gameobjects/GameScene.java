@@ -2,22 +2,20 @@ package com.example.game.gameobjects;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Rect;
 
-import androidx.core.content.ContextCompat;
-
-import com.example.game.R;
+import com.example.game.graphics.Sprite;
+import com.example.game.graphics.SpriteSheet;
 
 import java.util.ArrayList;
 
 public class GameScene {
     private Context context;
+    private Sprite sprite;
 
 
-
-    public void sceneChange(ArrayList<GameObject> gameObjects, int newSceneID) {
+    public void sceneChange(ArrayList<GameObject> gameObjects, int newSceneID, SpriteSheet spriteSheet) {
         setSceneID(newSceneID);
+        setSprite(spriteSheet);
         initSceneObjects(gameObjects);
     }
 
@@ -25,13 +23,24 @@ public class GameScene {
         ID_INVENTORY,
         ID_START,
         ID_LEFT,
-        ID_LEFT_UPD
+        ID_BACK,
+        ID_DOOR,
+        ID_CHEST,
+        ID_LABYRINTH,
+        ID_LABYRINTH_FINISHED,
+        ID_ARCADE,
+        ID_ARCADE_FINISHED
     }
     private int sceneID;
 
-    public GameScene(Context context, int sceneID) {
+    public GameScene(Context context, SpriteSheet spriteSheet, int sceneID) {
         this.context = context;
         this.sceneID = sceneID;
+        setSprite(spriteSheet);
+    }
+
+    public void setSprite(SpriteSheet spriteSheet) {
+        sprite = spriteSheet.getSpriteByID(SpriteSheet.SpriteType.BG_SPRITE.ordinal(),sceneID);
     }
     public ArrayList<GameObject> sceneObjects = new ArrayList();
 
@@ -59,10 +68,7 @@ public class GameScene {
     }
 
     public void draw(Canvas canvas){
-        Paint paint = new Paint();
-        int color = ContextCompat.getColor(context, R.color.white);
-        paint.setColor(color);
-        canvas.drawRect(new Rect(0,0, 1920, 1080), paint);
+        sprite.draw(canvas,0,0);
         for (GameObject object: sceneObjects) {
             object.draw(canvas);
         }

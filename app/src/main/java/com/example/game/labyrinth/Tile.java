@@ -4,50 +4,22 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.util.Log;
 
 import androidx.core.content.ContextCompat;
 
 import com.example.game.R;
+import com.example.game.graphics.Sprite;
+import com.example.game.graphics.SpriteSheet;
 
 public class Tile {
     private final Rect mapLocationRect;
     private final int tileID;
-    private Paint tilePaint;
+    private Sprite sprite;
 
-    public Tile(Context context, Rect mapLocationRect, int tileID) {
+    public Tile(Context context, Rect mapLocationRect, int tileID, SpriteSheet spriteSheet) {
         this.mapLocationRect = mapLocationRect;
         this.tileID = tileID;
-        initPaint(context);
-    }
-
-    private void initPaint(Context context) {
-        tilePaint = new Paint();
-        int color;
-        switch (TileType.values()[tileID]){
-            case ID_PATH:
-                color = ContextCompat.getColor(context, R.color.gray);
-                break;
-            case ID_WALL:
-                color = ContextCompat.getColor(context, R.color.black);
-                break;
-            case ID_SPIKE:
-                color = ContextCompat.getColor(context, R.color.red);
-                break;
-            case ID_KEY:
-                color = ContextCompat.getColor(context, R.color.gold);
-                break;
-            case ID_DOOR:
-                color = ContextCompat.getColor(context, R.color.brown);
-                break;
-            case ID_EXIT:
-                color = ContextCompat.getColor(context, R.color.white);
-                break;
-            default:
-                color = ContextCompat.getColor(context, R.color.teal_700);
-                break;
-        }
-        tilePaint.setColor(color);
+        sprite = spriteSheet.getSpriteByID(SpriteSheet.SpriteType.TILE_SPRITE.ordinal(),tileID);
     }
 
     public enum TileType{
@@ -56,7 +28,8 @@ public class Tile {
         ID_SPIKE,
         ID_KEY,
         ID_DOOR,
-        ID_EXIT
+        ID_EXIT,
+        ID_PLAYER
     }
 
     public int getTileID() {
@@ -66,7 +39,7 @@ public class Tile {
 
 
     public void draw(Canvas canvas){
-        canvas.drawRect(mapLocationRect, tilePaint);
+        sprite.draw(canvas,mapLocationRect.left,mapLocationRect.top);
     }
 
 

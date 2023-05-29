@@ -9,6 +9,7 @@ import android.graphics.Rect;
 import androidx.core.content.ContextCompat;
 
 import com.example.game.R;
+import com.example.game.graphics.SpriteSheet;
 
 public class TileMap {
     private MapLayout mapLayout;
@@ -16,10 +17,12 @@ public class TileMap {
     private Bitmap mapBitmap;
     private Context context;
     private Player player;
+    private SpriteSheet spriteSheet;
 
-    public TileMap(Context context, Player player) {
+    public TileMap(Context context, Player player, SpriteSheet spriteSheet) {
         this.context = context;
         this.player = player;
+        this.spriteSheet = spriteSheet;
         this.mapLayout = new MapLayout();
         initTileMap();
     }
@@ -29,7 +32,7 @@ public class TileMap {
         tileMap = new Tile[mapLayout.NUMBER_OF_ROWS][mapLayout.NUMBER_OF_COLUMNS];
         for (int row = 0; row < mapLayout.NUMBER_OF_ROWS; row++) {
             for (int column = 0; column < mapLayout.NUMBER_OF_COLUMNS; column++) {
-                tileMap[row][column] = new Tile(context, getRectByIndex(row,column), layout[row][column]);
+                tileMap[row][column] = new Tile(context, getRectByIndex(row,column), layout[row][column], spriteSheet);
             }
         }
 
@@ -49,7 +52,7 @@ public class TileMap {
     }
 
     public void changeTile(int row, int column, int newTileId){
-        tileMap[row][column] = new Tile(context, getRectByIndex(row,column), newTileId);
+        tileMap[row][column] = new Tile(context, getRectByIndex(row,column), newTileId, spriteSheet);
         updateBitmap();
     }
 

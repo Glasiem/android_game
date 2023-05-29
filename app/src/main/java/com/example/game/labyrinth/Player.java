@@ -8,6 +8,8 @@ import androidx.core.content.ContextCompat;
 
 import com.example.game.GameLoop;
 import com.example.game.R;
+import com.example.game.graphics.Sprite;
+import com.example.game.graphics.SpriteSheet;
 
 public class Player {
     private static final double PIXELS_PER_SECOND = 400;
@@ -23,8 +25,9 @@ public class Player {
     private boolean isLabyrinthCompleted = false;
     private Joystick joystick;
     private Context context;
+    private Sprite sprite;
 
-    public Player(double playerX, double playerY, double playerRadius, Joystick joystick, Context context) {
+    public Player(double playerX, double playerY, double playerRadius, Joystick joystick, Context context, SpriteSheet spriteSheet) {
         this.playerX = playerX;
         this.playerY = playerY;
         this.playerRadius = playerRadius;
@@ -32,6 +35,7 @@ public class Player {
         this.context = context;
         PLAYER_START_X = playerX;
         PLAYER_START_Y = playerY;
+        sprite = spriteSheet.getSpriteByID(SpriteSheet.SpriteType.TILE_SPRITE.ordinal(),Tile.TileType.ID_PLAYER.ordinal());
     }
 
 
@@ -104,12 +108,8 @@ public class Player {
     }
 
     public void draw(Canvas canvas, GameDisplay gameDisplay){
-        Paint paint = new Paint();
-        int color = ContextCompat.getColor(context, R.color.teal_700);
-        paint.setColor(color);
-        canvas.drawCircle((float) gameDisplay.gameToDisplayX(playerX),
-                (float) gameDisplay.gameToDisplayY(playerY),
-                (float) playerRadius, paint);
+        sprite.draw(canvas, (int) gameDisplay.gameToDisplayX(playerX-playerRadius),
+                (int) gameDisplay.gameToDisplayY(playerY-playerRadius));
     }
 
     public double getX() {
