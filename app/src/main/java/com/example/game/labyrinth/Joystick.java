@@ -1,5 +1,13 @@
 package com.example.game.labyrinth;
 
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+
+import androidx.core.content.ContextCompat;
+
+import com.example.game.R;
+
 public class Joystick {
     private int outerCircleCenterX;
     private int outerCircleCenterY;
@@ -13,14 +21,16 @@ public class Joystick {
     private double joystickCenterToTouchDistance;
     private double actuatorX;
     private double actuatorY;
+    private Context context;
 
-    public Joystick(int CircleCenterX, int CircleCenterY, int outerCircleRadius, int innerCircleRadius) {
+    public Joystick(int CircleCenterX, int CircleCenterY, int outerCircleRadius, int innerCircleRadius, Context context) {
         this.outerCircleCenterX = CircleCenterX;
         this.outerCircleCenterY = CircleCenterY;
         this.outerCircleRadius = outerCircleRadius;
         this.innerCircleCenterX = CircleCenterX;
         this.innerCircleCenterY = CircleCenterY;
         this.innerCircleRadius = innerCircleRadius;
+        this.context = context;
     }
 
     public void setActuators(double touchX, double touchY){
@@ -67,5 +77,16 @@ public class Joystick {
     public void update(){
         innerCircleCenterX = (int)(outerCircleCenterX + actuatorX*outerCircleRadius);
         innerCircleCenterY = (int)(outerCircleCenterY + actuatorY*outerCircleRadius);
+    }
+    
+    public void draw(Canvas canvas){
+        Paint outerPaint = new Paint();
+        int outerColor = ContextCompat.getColor(context, R.color.black);
+        outerPaint.setColor(outerColor);
+        canvas.drawCircle(outerCircleCenterX,outerCircleCenterY,outerCircleRadius, outerPaint);
+        Paint innerPaint = new Paint();
+        int innerColor = ContextCompat.getColor(context, R.color.purple_200);
+        innerPaint.setColor(innerColor);
+        canvas.drawCircle(innerCircleCenterX,innerCircleCenterY,innerCircleRadius, innerPaint);
     }
 }

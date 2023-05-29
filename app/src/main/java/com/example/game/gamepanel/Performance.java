@@ -9,6 +9,8 @@ import androidx.core.content.ContextCompat;
 import com.example.game.GameLoop;
 import com.example.game.R;
 
+import java.text.DecimalFormat;
+
 public class Performance {
 
     private GameLoop gameLoop;
@@ -25,7 +27,7 @@ public class Performance {
     }
 
     public void drawUPS(Canvas canvas){
-        String averageUPS = Double.toString(gameLoop.getAverageUPS());
+        String averageUPS = new DecimalFormat("#0.0").format(gameLoop.getAverageUPS());
         Paint paint = new Paint();
         int color = ContextCompat.getColor(context, R.color.magenta);
         paint.setColor(color);
@@ -34,7 +36,7 @@ public class Performance {
     }
 
     public void drawFPS(Canvas canvas){
-        String averageFPS = Double.toString(gameLoop.getAverageFPS());
+        String averageFPS = new DecimalFormat("#0.0").format(gameLoop.getAverageFPS());
         Paint paint = new Paint();
         int color = ContextCompat.getColor(context, R.color.magenta);
         paint.setColor(color);
