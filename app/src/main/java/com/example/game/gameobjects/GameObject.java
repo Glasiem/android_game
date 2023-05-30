@@ -49,9 +49,9 @@ public class GameObject {
         ID_DOOR_TO_START,
         ID_DOOR_TO_BACK,
         ID_KEY_PART_ONE,
-        ID_KEY_PART_ONE_INV,
-        ID_KEY_PART_TWO,
-        ID_KEY_PART_TWO_INV,
+        ID_KEY_PART_ONE_INV,//
+        ID_KEY_PART_TWO,//
+        ID_KEY_PART_TWO_INV,//
         ID_FINAL_KEY_INV,
         ID_ITEM_FRAME
     }

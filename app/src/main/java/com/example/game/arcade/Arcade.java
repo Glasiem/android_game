@@ -9,8 +9,9 @@ import com.example.game.graphics.Sprite;
 import com.example.game.graphics.SpriteSheet;
 
 public class Arcade {
+
     private final static int ELEMENT_TYPES_NUMBER = 6;
-    private final static int ROWS_NUMBER = 6;
+    private final static int ROWS_NUMBER = 7;
     private final static int COLUMNS_NUMBER = 10;
     private int[][] elements;
     private SpriteSheet spriteSheet;
@@ -30,7 +31,11 @@ public class Arcade {
             int temp = elements[row][column];
             elements[row][column]=elements[row][column+1];
             elements[row][column+1]=temp;
-            checkAndUpdate();
+            if(!checkAndUpdate()){
+                temp = elements[row][column];
+                elements[row][column]=elements[row][column+1];
+                elements[row][column+1]=temp;
+            };
             bitmapUpdate();
         }
     }
@@ -42,7 +47,11 @@ public class Arcade {
             int temp = elements[row][column];
             elements[row][column]=elements[row][column-1];
             elements[row][column-1]=temp;
-            checkAndUpdate();
+            if(!checkAndUpdate()){
+                temp = elements[row][column];
+                elements[row][column]=elements[row][column-1];
+                elements[row][column-1]=temp;
+            };
             bitmapUpdate();
         }
     }
@@ -54,7 +63,11 @@ public class Arcade {
             int temp = elements[row][column];
             elements[row][column]=elements[row+1][column];
             elements[row+1][column]=temp;
-            checkAndUpdate();
+            if(!checkAndUpdate()){
+                temp = elements[row][column];
+                elements[row][column]=elements[row+1][column];
+                elements[row+1][column]=temp;
+            };
             bitmapUpdate();
         }
     }
@@ -66,7 +79,11 @@ public class Arcade {
             int temp = elements[row][column];
             elements[row][column]=elements[row-1][column];
             elements[row-1][column]=temp;
-            checkAndUpdate();
+            if(!checkAndUpdate()){
+                temp = elements[row][column];
+                elements[row][column]=elements[row-1][column];
+                elements[row-1][column]=temp;
+            };
             bitmapUpdate();
         }
     }
@@ -102,7 +119,7 @@ public class Arcade {
         );
     }
 
-    private void checkAndUpdate(){
+    private boolean checkAndUpdate(){
         boolean check = checkRows();
         if (check == false){
             check = checkColumns();
@@ -114,6 +131,7 @@ public class Arcade {
             checkAndUpdate();
         }
         checkIfComplete();
+        return check;
     }
 
     private boolean checkRows(){
@@ -226,12 +244,16 @@ public class Arcade {
                 elements[i][j] = (int) (Math.random()*(ElementType.values().length-1));
             }
         }
-        elements[0][(int) (Math.random()*COLUMNS_NUMBER)] = ElementType.ID_KEY.ordinal();
         checkAndUpdate();
+        elements[0][(int) (Math.random()*COLUMNS_NUMBER)] = ElementType.ID_KEY.ordinal();
         bitmapUpdate();
     }
 
     public void bitmapUpdate(){
+        Bitmap.Config config = Bitmap.Config.ARGB_8888;
+        bitmap = Bitmap.createBitmap(COLUMNS_NUMBER*SpriteSheet.ARCADE_SPRITE_WIDTH,
+                ROWS_NUMBER*SpriteSheet.ARCADE_SPRITE_HEIGHT,
+                config);
         Canvas mapCanvas = new Canvas(bitmap);
         for (int row = 0; row < ROWS_NUMBER; row++) {
             for (int column = 0; column < COLUMNS_NUMBER; column++) {

@@ -12,4 +12,7 @@
     <color name="gold">#E2B514</color>
     <color name="red">#F11909</color>
     <color name="brown">#6B3E0D</color>
+    <color name="brown_joystick">#401D11</color>
+    <color name="black_joystick">#0B0403</color>
+    <color name="green">#3BB11B</color>
 </resources>

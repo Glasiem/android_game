@@ -81,11 +81,11 @@ public class Joystick {
     
     public void draw(Canvas canvas){
         Paint outerPaint = new Paint();
-        int outerColor = ContextCompat.getColor(context, R.color.black);
+        int outerColor = ContextCompat.getColor(context, R.color.black_joystick);
         outerPaint.setColor(outerColor);
         canvas.drawCircle(outerCircleCenterX,outerCircleCenterY,outerCircleRadius, outerPaint);
         Paint innerPaint = new Paint();
-        int innerColor = ContextCompat.getColor(context, R.color.purple_200);
+        int innerColor = ContextCompat.getColor(context, R.color.brown_joystick);
         innerPaint.setColor(innerColor);
         canvas.drawCircle(innerCircleCenterX,innerCircleCenterY,innerCircleRadius, innerPaint);
     }

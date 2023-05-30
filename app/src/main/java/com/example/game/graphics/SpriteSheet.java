@@ -33,7 +33,7 @@ public class SpriteSheet {
         scaleY = (double) displayHeight/1080;
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inScaled = false;
-        bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.sprite_sheet1, options);
+        bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.sprite_sheet, options);
     }
 
     public Bitmap getBitmap(){

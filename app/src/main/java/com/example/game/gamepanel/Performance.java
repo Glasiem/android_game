@@ -23,7 +23,7 @@ public class Performance {
 
     public void draw(Canvas canvas) {
         drawUPS(canvas);
-        drawFPS(canvas);
+        //drawFPS(canvas);
     }
 
     public void drawUPS(Canvas canvas){

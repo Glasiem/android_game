@@ -35,7 +35,7 @@ public class ItemFrame {
     }
 
     public void posUpdate(int invPos){
-        posX = invPos-10;
+        posX = invPos-8;
     }
 
     public void draw(Canvas canvas){

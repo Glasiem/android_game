@@ -3,6 +3,7 @@ package com.example.game;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.util.DisplayMetrics;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -10,6 +11,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 
 import com.example.game.arcade.Arcade;
 import com.example.game.gameobjects.GameObject;
@@ -43,6 +45,7 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
     private int touchesPerUpdate = 0;
     private float swipeStartX;
     private float swipeStartY;
+    private boolean gameCompleted = false;
 
     public Game(Context context) {
         super(context);
@@ -61,12 +64,12 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
         gameScene.initSceneObjects(gameObjects);
         inventory = new Inventory();
         inventory.initInventoryObjects(gameObjects);
-        arcade = new Arcade(spriteSheet, 300, 100);
+        arcade = new Arcade(spriteSheet, 650, 190);
         handObject = gameObjects.get(0);
         itemFrame = new ItemFrame(context, handObject.getPosX(),handObject.getPosY(),handObject.getHeight(),handObject.getWidth(), spriteSheet);
         joystick = new Joystick((int) (300*spriteSheet.scaleX), (int) (500*spriteSheet.scaleY), (int) (200*spriteSheet.scaleX), (int) (70*spriteSheet.scaleX),context);
-        player = new Player(1100,450,30,joystick,context,spriteSheet);
-        gameDisplay = new GameDisplay(600, 200, 1600, 700,player);
+        player = new Player(1200,535,30,joystick,context,spriteSheet);
+        gameDisplay = new GameDisplay(700, 180, 1700, 890,player);
         tileMap = new TileMap(context,player, spriteSheet);
 
         setFocusable(true);
@@ -76,78 +79,80 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
         gameObjects.add(new GameObject(getContext(), spriteSheet,GameObject.ObjectType.ID_HAND.ordinal(),
                 GameScene.SceneType.ID_INVENTORY.ordinal(),
                 80, 950, Inventory.ITEM_SIZE, Inventory.ITEM_SIZE));
+
+
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_CUTTERS.ordinal(),
                 GameScene.SceneType.ID_START.ordinal(),
-                900, 200, 200, 200));
+                700, 600, 120, 190));
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_CHEST_CLOSED.ordinal(),
                 GameScene.SceneType.ID_START.ordinal(),
-                400, 700, 200, 200));
+                1295, 525, 270, 280));
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_START_TO_LEFT.ordinal(),
                 GameScene.SceneType.ID_START.ordinal(),
-                20, 500, 100, 200));
+                50, 415, 145, 215));
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_START_TO_DOOR.ordinal(),
                 GameScene.SceneType.ID_START.ordinal(),
-                1700, 500, 100, 200));
+                1655, 415, 145, 215));
 
 
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_METAL_GRID.ordinal(),
                 GameScene.SceneType.ID_LEFT.ordinal(),
-                900, 200, 200, 200));
-        gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_KEY.ordinal(),
-                GameScene.SceneType.ID_LEFT.ordinal(),
-                400, 700, 200, 200));
+                933, 631, 185, 175));
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_LEFT_TO_BACK.ordinal(),
                 GameScene.SceneType.ID_LEFT.ordinal(),
-                20, 500, 100, 200));
+                50, 415, 145, 215));
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_LEFT_TO_START.ordinal(),
                 GameScene.SceneType.ID_LEFT.ordinal(),
-                1700, 500, 100, 200));
+                1655, 415, 145, 215));
 
 
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_ARCADE_MACHINE.ordinal(),
                 GameScene.SceneType.ID_BACK.ordinal(),
-                400, 700, 200, 200));
+                1060, 540, 450, 260));
+        gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_KEY.ordinal(),
+                GameScene.SceneType.ID_BACK.ordinal(),
+                325, 425, 175, 110));
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_BACK_TO_DOOR.ordinal(),
                 GameScene.SceneType.ID_BACK.ordinal(),
-                20, 500, 100, 200));
+                50, 415, 145, 215));
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_BACK_TO_LEFT.ordinal(),
                 GameScene.SceneType.ID_BACK.ordinal(),
-                1700, 500, 100, 200));
+                1655, 415, 145, 215));
 
 
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_DOOR.ordinal(),
                 GameScene.SceneType.ID_DOOR.ordinal(),
-                900, 200, 200, 200));
+                680, 705, 212, 115));
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_DOOR_TO_START.ordinal(),
                 GameScene.SceneType.ID_DOOR.ordinal(),
-                20, 500, 100, 200));
+                50, 415, 145, 215));
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_DOOR_TO_BACK.ordinal(),
                 GameScene.SceneType.ID_DOOR.ordinal(),
-                1700, 500, 100, 200));
+                1655, 415, 145, 215));
 
 
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_BATTERY.ordinal(),
                 GameScene.SceneType.ID_CHEST.ordinal(),
-                900, 200, 200, 200));
+                530, 360, 270, 365));
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_CHEST_BACK.ordinal(),
                 GameScene.SceneType.ID_CHEST.ordinal(),
-                20, 20, 100, 200));
+                50, 85, 145, 215));
 
 
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_KEY_PART_TWO.ordinal(),
                 GameScene.SceneType.ID_ARCADE_FINISHED.ordinal(),
-                500, 200, 200, 200));
+                805, 760, 90, 200));
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_ARCADE_MACHINE_BACK.ordinal(),
                 GameScene.SceneType.ID_ARCADE.ordinal(),
-                20, 20, 100, 200));
+                50, 85, 145, 215));
 
 
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_KEY_PART_ONE.ordinal(),
                 GameScene.SceneType.ID_LABYRINTH_FINISHED.ordinal(),
-                900, 500, 200, 200));
+                1050, 515, 290, 380));
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_LABYRINTH_BOX_BACK.ordinal(),
                 GameScene.SceneType.ID_LABYRINTH.ordinal(),
-                20, 20, 100, 200));
+                50, 85, 145, 215));
     }
 
     @Override
@@ -214,11 +219,6 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
                                             break;
                                         case ID_LEFT:
                                             switch (GameObject.ObjectType.values()[object.getObjectID()]) {
-                                                case ID_KEY:
-                                                    objectInteract(object, GameObject.ObjectType.ID_HAND.ordinal(),
-                                                            GameObject.ObjectType.ID_KEY_INV.ordinal(),
-                                                            GameScene.SceneType.ID_INVENTORY.ordinal());
-                                                    break;
                                                 case ID_METAL_GRID:
                                                     if (objectInteract(object, GameObject.ObjectType.ID_CUTTERS_INV.ordinal(),
                                                             GameObject.ObjectType.ID_LABYRINTH_BOX.ordinal(),
@@ -241,6 +241,11 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
                                             break;
                                         case ID_BACK:
                                             switch (GameObject.ObjectType.values()[object.getObjectID()]) {
+                                                case ID_KEY:
+                                                    objectInteract(object, GameObject.ObjectType.ID_HAND.ordinal(),
+                                                            GameObject.ObjectType.ID_KEY_INV.ordinal(),
+                                                            GameScene.SceneType.ID_INVENTORY.ordinal());
+                                                    break;
                                                 case ID_ARCADE_MACHINE:
                                                     if (objectInteract(object, GameObject.ObjectType.ID_BATTERY_INV.ordinal(),
                                                             GameObject.ObjectType.ID_ARCADE_MACHINE_WORKING.ordinal(),
@@ -265,7 +270,11 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
                                         case ID_DOOR:
                                             switch (GameObject.ObjectType.values()[object.getObjectID()]) {
                                                 case ID_DOOR:
-
+                                                    if (objectInteract(object, GameObject.ObjectType.ID_FINAL_KEY_INV.ordinal(),
+                                                            GameObject.ObjectType.ID_DOOR.ordinal(),
+                                                            GameScene.SceneType.ID_DOOR.ordinal()))
+                                                        objectDelete();
+                                                    gameCompleted = true;
                                                     break;
                                                 case ID_DOOR_TO_START:
                                                     gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_START.ordinal(), spriteSheet);
@@ -460,8 +469,8 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
     public void draw(Canvas canvas) {
         super.draw(canvas);
         gameScene.draw(canvas);
-        itemFrame.draw(canvas);
         inventory.draw(canvas);
+        itemFrame.draw(canvas);
         if (gameScene.getSceneID()== GameScene.SceneType.ID_LABYRINTH.ordinal()){
             tileMap.draw(canvas,gameDisplay);
             player.draw(canvas,gameDisplay);
@@ -471,6 +480,13 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
             arcade.draw(canvas);
         }
         performance.draw(canvas);
+        if (gameCompleted){
+            Paint paint = new Paint();
+            int color = ContextCompat.getColor(getContext(),R.color.green);
+            paint.setColor(color);
+            paint.setTextSize(160);
+            canvas.drawText("CONGRATULATIONS!", 100, 300, paint);
+        }
     }
 
     public void update() {
@@ -493,7 +509,7 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
             if(arcade.isArcadeCompleted()){
                 objectChange(GameObject.ObjectType.ID_ARCADE_MACHINE_WORKING.ordinal(),
                         GameObject.ObjectType.ID_ARCADE_MACHINE_FINISHED.ordinal(),
-                        GameScene.SceneType.ID_LEFT.ordinal());
+                        GameScene.SceneType.ID_BACK.ordinal());
                 objectChange(GameObject.ObjectType.ID_ARCADE_MACHINE_BACK.ordinal(),
                         GameObject.ObjectType.ID_ARCADE_MACHINE_FINISHED_BACK.ordinal(),
                         GameScene.SceneType.ID_ARCADE_FINISHED.ordinal());
