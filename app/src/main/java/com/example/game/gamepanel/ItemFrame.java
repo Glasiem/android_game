@@ -8,6 +8,9 @@ import android.graphics.Rect;
 import androidx.core.content.ContextCompat;
 
 import com.example.game.R;
+import com.example.game.gameobjects.GameObject;
+import com.example.game.graphics.Sprite;
+import com.example.game.graphics.SpriteSheet;
 
 public class ItemFrame {
     private Context context;
@@ -15,13 +18,20 @@ public class ItemFrame {
     private int posY;
     private int height;
     private int width;
+    private Sprite sprite;
 
-    public ItemFrame(Context context, int posX, int posY, int height, int width) {
+    public ItemFrame(Context context, int posX, int posY, int height, int width, SpriteSheet spriteSheet) {
         this.context = context;
         this.posX = posX-8;
         this.posY = posY-8;
         this.height = height+16;
         this.width = width+16;
+        setSprite(spriteSheet);
+    }
+
+    public void setSprite(SpriteSheet spriteSheet) {
+        sprite = spriteSheet.getSpriteByID(SpriteSheet.SpriteType.OBJ_SPRITE.ordinal(),
+                GameObject.ObjectType.ID_ITEM_FRAME.ordinal(), height, width);
     }
 
     public void posUpdate(int invPos){
@@ -29,9 +39,6 @@ public class ItemFrame {
     }
 
     public void draw(Canvas canvas){
-        Paint paint = new Paint();
-        int color = ContextCompat.getColor(context, R.color.black);
-        paint.setColor(color);
-        canvas.drawRect(new Rect(posX,posY,posX+width,posY+height), paint);
+        sprite.draw(canvas,posX,posY);
     }
 }

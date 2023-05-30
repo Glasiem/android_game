@@ -8,6 +8,8 @@ import android.graphics.Rect;
 import com.example.game.R;
 
 public class SpriteSheet {
+    public final double scaleX;
+    public final double scaleY;
 
     public enum SpriteType{
         TILE_SPRITE,
@@ -16,17 +18,19 @@ public class SpriteSheet {
         OBJ_SPRITE
     }
     private static final int BG_SPRITE_ROWS = 5;
-    private static final int TILE_SPRITE_HEIGHT = 64;
-    private static final int TILE_SPRITE_WIDTH = 64;
-    private static final int ARCADE_SPRITE_HEIGHT = 64;
-    private static final int ARCADE_SPRITE_WIDTH = 64;
+    public static final int TILE_SPRITE_HEIGHT = 64;
+    public static final int TILE_SPRITE_WIDTH = 64;
+    public static final int ARCADE_SPRITE_HEIGHT = 64;
+    public static final int ARCADE_SPRITE_WIDTH = 64;
     private static final int BG_SPRITE_HEIGHT = 1080;
     private static final int BG_SPRITE_WIDTH = 1920;
     private static final int OBJ_SPRITE_HEIGHT = 512;
     private static final int OBJ_SPRITE_WIDTH = 512;
     private Bitmap bitmap;
 
-    public SpriteSheet(Context context) {
+    public SpriteSheet(Context context, int displayWidth, int displayHeight) {
+        scaleX  = (double) displayWidth/1920;
+        scaleY = (double) displayHeight/1080;
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inScaled = false;
         bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.sprite_sheet1, options);

@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.RectF;
 
 import androidx.core.content.ContextCompat;
 
@@ -83,7 +84,11 @@ public class TileMap {
         Paint paint = new Paint();
         int color = ContextCompat.getColor(context, R.color.black);
         paint.setColor(color);
-        canvas.drawBitmap(mapBitmap, gameDisplay.getGameRect(), gameDisplay.DISPLAY_RECT,paint);
+        RectF rectF = new RectF((float) (gameDisplay.DISPLAY_RECT.left*spriteSheet.scaleX),
+                (float) (gameDisplay.DISPLAY_RECT.top*spriteSheet.scaleY),
+                (float) (gameDisplay.DISPLAY_RECT.right*spriteSheet.scaleX),
+                (float) (gameDisplay.DISPLAY_RECT.bottom*spriteSheet.scaleY));
+        canvas.drawBitmap(mapBitmap, gameDisplay.getGameRect(), rectF,paint);
     }
 
     public Tile[][] getTileMap() {

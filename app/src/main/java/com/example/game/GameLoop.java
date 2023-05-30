@@ -57,7 +57,7 @@ public class GameLoop extends Thread {
                     game.draw(canvas);
                 }
             }
-            catch (IllegalArgumentException e){
+            catch (Exception e){
                 e.printStackTrace();
             }
             finally {

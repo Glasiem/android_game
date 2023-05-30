@@ -1,13 +1,17 @@
 package com.example.game;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.util.DisplayMetrics;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
 
+import com.example.game.arcade.Arcade;
 import com.example.game.gameobjects.GameObject;
 import com.example.game.gameobjects.GameScene;
 import com.example.game.gamepanel.Inventory;
@@ -22,9 +26,11 @@ import com.example.game.labyrinth.TileMap;
 import java.util.ArrayList;
 
 public class Game extends SurfaceView implements SurfaceHolder.Callback {
+    private static final float SWIPE_THRESHOLD = 50;
     private final Performance performance;
     private final GameScene gameScene;
     private final Inventory inventory;
+    private final Arcade arcade;
     private GameLoop gameLoop;
     private ArrayList<GameObject> gameObjects = new ArrayList();
     private GameObject handObject;
@@ -34,6 +40,9 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
     private GameDisplay gameDisplay;
     private TileMap tileMap;
     private SpriteSheet spriteSheet;
+    private int touchesPerUpdate = 0;
+    private float swipeStartX;
+    private float swipeStartY;
 
     public Game(Context context) {
         super(context);
@@ -43,19 +52,21 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
         surfaceHolder.addCallback(this);
 
         gameLoop = new GameLoop(this, surfaceHolder);
-
-        spriteSheet = new SpriteSheet(context);
+        DisplayMetrics displayMetrics= new DisplayMetrics();
+        ((Activity) getContext()).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        spriteSheet = new SpriteSheet(context, displayMetrics.widthPixels, displayMetrics.heightPixels);
         performance = new Performance(gameLoop, context);
-        gameScene = new GameScene(context, spriteSheet, 1);
+        gameScene = new GameScene(context, spriteSheet, GameScene.SceneType.ID_START.ordinal());
         initGameObjects(spriteSheet);
         gameScene.initSceneObjects(gameObjects);
         inventory = new Inventory();
         inventory.initInventoryObjects(gameObjects);
+        arcade = new Arcade(spriteSheet, 300, 100);
         handObject = gameObjects.get(0);
-        itemFrame = new ItemFrame(context, handObject.getPosX(),handObject.getPosY(),handObject.getHeight(),handObject.getWidth());
-        joystick = new Joystick(300,500,200,70,context);
+        itemFrame = new ItemFrame(context, handObject.getPosX(),handObject.getPosY(),handObject.getHeight(),handObject.getWidth(), spriteSheet);
+        joystick = new Joystick((int) (300*spriteSheet.scaleX), (int) (500*spriteSheet.scaleY), (int) (200*spriteSheet.scaleX), (int) (70*spriteSheet.scaleX),context);
         player = new Player(1100,450,30,joystick,context,spriteSheet);
-        gameDisplay = new GameDisplay(600,200,1600,700,player);
+        gameDisplay = new GameDisplay(600, 200, 1600, 700,player);
         tileMap = new TileMap(context,player, spriteSheet);
 
         setFocusable(true);
@@ -125,7 +136,7 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
 
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_KEY_PART_TWO.ordinal(),
                 GameScene.SceneType.ID_ARCADE_FINISHED.ordinal(),
-                900, 200, 200, 200));
+                500, 200, 200, 200));
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_ARCADE_MACHINE_BACK.ordinal(),
                 GameScene.SceneType.ID_ARCADE.ordinal(),
                 20, 20, 100, 200));
@@ -133,7 +144,7 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
 
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_KEY_PART_ONE.ordinal(),
                 GameScene.SceneType.ID_LABYRINTH_FINISHED.ordinal(),
-                900, 200, 200, 200));
+                900, 500, 200, 200));
         gameObjects.add(new GameObject(getContext(),spriteSheet, GameObject.ObjectType.ID_LABYRINTH_BOX_BACK.ordinal(),
                 GameScene.SceneType.ID_LABYRINTH.ordinal(),
                 20, 20, 100, 200));
@@ -141,190 +152,225 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getAction()){
-
-            case MotionEvent.ACTION_DOWN:
-                if (gameScene.getSceneID()== GameScene.SceneType.ID_LABYRINTH.ordinal() && joystick.isPressed(event.getX(),event.getY())){
-                    joystick.setPressed(true);
-                }
-                else {
-                    for (GameObject object : inventory.inventoryObjects){
-                        if (object.isPressed(event.getX(), event.getY())) {
-                            switch (GameObject.ObjectType.values()[object.getObjectID()]) {
-                                case ID_HAND:
-                                case ID_CUTTERS_INV:
-                                case ID_BATTERY_INV:
-                                case ID_FINAL_KEY_INV:
-                                case ID_KEY_INV:
-                                    changeHandObject(object);
-                                    break;
-                                case ID_KEY_PART_ONE_INV:
-                                    objectsCombine(object, GameObject.ObjectType.ID_KEY_PART_TWO_INV.ordinal(),
-                                            GameObject.ObjectType.ID_FINAL_KEY_INV.ordinal());
-                                    break;
-                                case ID_KEY_PART_TWO_INV:
-                                    objectsCombine(object, GameObject.ObjectType.ID_KEY_PART_ONE_INV.ordinal(),
-                                            GameObject.ObjectType.ID_FINAL_KEY_INV.ordinal());
-                                    break;
+        try {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    if (touchesPerUpdate == 0) {
+                        if (gameScene.getSceneID() == GameScene.SceneType.ID_LABYRINTH.ordinal() &&
+                                joystick.isPressed(event.getX(), event.getY())) {
+                            joystick.setPressed(true);
+                        } else {
+                            if (gameScene.getSceneID() == GameScene.SceneType.ID_ARCADE.ordinal()) {
+                                swipeStartX = event.getX();
+                                swipeStartY = event.getY();
                             }
-                        }
-                    }
-                    for (GameObject object : gameScene.sceneObjects) {
-                        if (object.isPressed(event.getX(), event.getY())) {
-                            switch (GameScene.SceneType.values()[object.getSceneID()]) {
-                                case ID_START:
+                            for (GameObject object : inventory.inventoryObjects) {
+                                if (object.isPressed((float) (event.getX() / spriteSheet.scaleX), (float) (event.getY() / spriteSheet.scaleY))) {
                                     switch (GameObject.ObjectType.values()[object.getObjectID()]) {
-                                        case ID_CUTTERS:
-                                            objectInteract(object, GameObject.ObjectType.ID_HAND.ordinal(),
-                                                    GameObject.ObjectType.ID_CUTTERS_INV.ordinal(),
-                                                    GameScene.SceneType.ID_INVENTORY.ordinal());
+                                        case ID_HAND:
+                                        case ID_CUTTERS_INV:
+                                        case ID_BATTERY_INV:
+                                        case ID_FINAL_KEY_INV:
+                                        case ID_KEY_INV:
+                                            changeHandObject(object);
                                             break;
-                                        case ID_CHEST_CLOSED:
-                                            objectInteract(object, GameObject.ObjectType.ID_KEY_INV.ordinal(),
-                                                    GameObject.ObjectType.ID_CHEST_OPEN.ordinal(),
-                                                    GameScene.SceneType.ID_START.ordinal());
-                                            objectDelete();
+                                        case ID_KEY_PART_ONE_INV:
+                                            objectsCombine(object, GameObject.ObjectType.ID_KEY_PART_TWO_INV.ordinal(),
+                                                    GameObject.ObjectType.ID_FINAL_KEY_INV.ordinal());
                                             break;
-                                        case ID_CHEST_OPEN:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_CHEST.ordinal(), spriteSheet);
-                                            break;
-                                        case ID_START_TO_LEFT:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_LEFT.ordinal(), spriteSheet);
-                                            break;
-                                        case ID_START_TO_DOOR:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_DOOR.ordinal(), spriteSheet);
+                                        case ID_KEY_PART_TWO_INV:
+                                            objectsCombine(object, GameObject.ObjectType.ID_KEY_PART_ONE_INV.ordinal(),
+                                                    GameObject.ObjectType.ID_FINAL_KEY_INV.ordinal());
                                             break;
                                     }
-                                    break;
-                                case ID_LEFT:
-                                    switch (GameObject.ObjectType.values()[object.getObjectID()]) {
-                                        case ID_KEY:
-                                            objectInteract(object, GameObject.ObjectType.ID_HAND.ordinal(),
-                                                    GameObject.ObjectType.ID_KEY_INV.ordinal(),
-                                                    GameScene.SceneType.ID_INVENTORY.ordinal());
+                                }
+                            }
+                            for (GameObject object : gameScene.sceneObjects) {
+                                if (object.isPressed((float) (event.getX() / spriteSheet.scaleX), (float) (event.getY() / spriteSheet.scaleY))) {
+                                    switch (GameScene.SceneType.values()[object.getSceneID()]) {
+                                        case ID_START:
+                                            switch (GameObject.ObjectType.values()[object.getObjectID()]) {
+                                                case ID_CUTTERS:
+                                                    objectInteract(object, GameObject.ObjectType.ID_HAND.ordinal(),
+                                                            GameObject.ObjectType.ID_CUTTERS_INV.ordinal(),
+                                                            GameScene.SceneType.ID_INVENTORY.ordinal());
+                                                    break;
+                                                case ID_CHEST_CLOSED:
+                                                    if (objectInteract(object, GameObject.ObjectType.ID_KEY_INV.ordinal(),
+                                                            GameObject.ObjectType.ID_CHEST_OPEN.ordinal(),
+                                                            GameScene.SceneType.ID_START.ordinal()))
+                                                        objectDelete();
+                                                    break;
+                                                case ID_CHEST_OPEN:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_CHEST.ordinal(), spriteSheet);
+                                                    break;
+                                                case ID_START_TO_LEFT:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_LEFT.ordinal(), spriteSheet);
+                                                    break;
+                                                case ID_START_TO_DOOR:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_DOOR.ordinal(), spriteSheet);
+                                                    break;
+                                            }
                                             break;
-                                        case ID_METAL_GRID:
-                                            objectInteract(object, GameObject.ObjectType.ID_CUTTERS_INV.ordinal(),
-                                                    GameObject.ObjectType.ID_LABYRINTH_BOX.ordinal(),
-                                                    GameScene.SceneType.ID_LEFT.ordinal());
-                                            objectDelete();
+                                        case ID_LEFT:
+                                            switch (GameObject.ObjectType.values()[object.getObjectID()]) {
+                                                case ID_KEY:
+                                                    objectInteract(object, GameObject.ObjectType.ID_HAND.ordinal(),
+                                                            GameObject.ObjectType.ID_KEY_INV.ordinal(),
+                                                            GameScene.SceneType.ID_INVENTORY.ordinal());
+                                                    break;
+                                                case ID_METAL_GRID:
+                                                    if (objectInteract(object, GameObject.ObjectType.ID_CUTTERS_INV.ordinal(),
+                                                            GameObject.ObjectType.ID_LABYRINTH_BOX.ordinal(),
+                                                            GameScene.SceneType.ID_LEFT.ordinal()))
+                                                        objectDelete();
+                                                    break;
+                                                case ID_LABYRINTH_BOX:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_LABYRINTH.ordinal(), spriteSheet);
+                                                    break;
+                                                case ID_LABYRINTH_BOX_FINISHED:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_LABYRINTH_FINISHED.ordinal(), spriteSheet);
+                                                    break;
+                                                case ID_LEFT_TO_START:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_START.ordinal(), spriteSheet);
+                                                    break;
+                                                case ID_LEFT_TO_BACK:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_BACK.ordinal(), spriteSheet);
+                                                    break;
+                                            }
                                             break;
-                                        case ID_LABYRINTH_BOX:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_LABYRINTH.ordinal(), spriteSheet);
+                                        case ID_BACK:
+                                            switch (GameObject.ObjectType.values()[object.getObjectID()]) {
+                                                case ID_ARCADE_MACHINE:
+                                                    if (objectInteract(object, GameObject.ObjectType.ID_BATTERY_INV.ordinal(),
+                                                            GameObject.ObjectType.ID_ARCADE_MACHINE_WORKING.ordinal(),
+                                                            GameScene.SceneType.ID_BACK.ordinal()))
+                                                        objectDelete();
+                                                    break;
+                                                case ID_ARCADE_MACHINE_WORKING:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_ARCADE.ordinal(), spriteSheet);
+                                                    arcade.arcadeFill();
+                                                    break;
+                                                case ID_ARCADE_MACHINE_FINISHED:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_ARCADE_FINISHED.ordinal(), spriteSheet);
+                                                    break;
+                                                case ID_BACK_TO_LEFT:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_LEFT.ordinal(), spriteSheet);
+                                                    break;
+                                                case ID_BACK_TO_DOOR:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_DOOR.ordinal(), spriteSheet);
+                                                    break;
+                                            }
                                             break;
-                                        case ID_LABYRINTH_BOX_FINISHED:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_LABYRINTH_FINISHED.ordinal(), spriteSheet);
-                                            break;
-                                        case ID_LEFT_TO_START:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_START.ordinal(), spriteSheet);
-                                            break;
-                                        case ID_LEFT_TO_BACK:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_BACK.ordinal(), spriteSheet);
-                                            break;
-                                    }
-                                    break;
-                                case ID_BACK:
-                                    switch (GameObject.ObjectType.values()[object.getObjectID()]) {
-                                        case ID_ARCADE_MACHINE:
-                                            objectInteract(object, GameObject.ObjectType.ID_BATTERY_INV.ordinal(),
-                                                    GameObject.ObjectType.ID_ARCADE_MACHINE_WORKING.ordinal(),
-                                                    GameScene.SceneType.ID_BACK.ordinal());
-                                            objectDelete();
-                                            break;
-                                        case ID_ARCADE_MACHINE_WORKING:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_ARCADE.ordinal(), spriteSheet);
-                                            break;
-                                        case ID_ARCADE_MACHINE_FINISHED:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_ARCADE_FINISHED.ordinal(), spriteSheet);
-                                            break;
-                                        case ID_BACK_TO_LEFT:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_LEFT.ordinal(), spriteSheet);
-                                            break;
-                                        case ID_BACK_TO_DOOR:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_DOOR.ordinal(), spriteSheet);
-                                            break;
-                                    }
-                                    break;
-                                case ID_DOOR:
-                                    switch (GameObject.ObjectType.values()[object.getObjectID()]) {
                                         case ID_DOOR:
+                                            switch (GameObject.ObjectType.values()[object.getObjectID()]) {
+                                                case ID_DOOR:
 
+                                                    break;
+                                                case ID_DOOR_TO_START:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_START.ordinal(), spriteSheet);
+                                                    break;
+                                                case ID_DOOR_TO_BACK:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_BACK.ordinal(), spriteSheet);
+                                                    break;
+                                            }
                                             break;
-                                        case ID_DOOR_TO_START:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_START.ordinal(), spriteSheet);
+                                        case ID_CHEST:
+                                            switch (GameObject.ObjectType.values()[object.getObjectID()]) {
+                                                case ID_BATTERY:
+                                                    objectInteract(object, GameObject.ObjectType.ID_HAND.ordinal(),
+                                                            GameObject.ObjectType.ID_BATTERY_INV.ordinal(),
+                                                            GameScene.SceneType.ID_INVENTORY.ordinal());
+                                                    break;
+                                                case ID_CHEST_BACK:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_START.ordinal(), spriteSheet);
+                                                    break;
+                                            }
                                             break;
-                                        case ID_DOOR_TO_BACK:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_BACK.ordinal(), spriteSheet);
+                                        case ID_LABYRINTH:
+                                            switch (GameObject.ObjectType.values()[object.getObjectID()]) {
+                                                case ID_LABYRINTH_BOX_BACK:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_LEFT.ordinal(), spriteSheet);
+                                                    break;
+                                            }
+                                            break;
+                                        case ID_LABYRINTH_FINISHED:
+                                            switch (GameObject.ObjectType.values()[object.getObjectID()]) {
+                                                case ID_KEY_PART_ONE:
+                                                    objectInteract(object, GameObject.ObjectType.ID_HAND.ordinal(),
+                                                            GameObject.ObjectType.ID_KEY_PART_ONE_INV.ordinal(),
+                                                            GameScene.SceneType.ID_INVENTORY.ordinal());
+                                                    break;
+                                                case ID_LABYRINTH_BOX_FINISHED_BACK:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_LEFT.ordinal(), spriteSheet);
+                                                    break;
+                                            }
+                                            break;
+                                        case ID_ARCADE:
+                                            switch (GameObject.ObjectType.values()[object.getObjectID()]) {
+                                                case ID_ARCADE_MACHINE_BACK:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_BACK.ordinal(), spriteSheet);
+                                                    break;
+                                            }
+                                            break;
+                                        case ID_ARCADE_FINISHED:
+                                            switch (GameObject.ObjectType.values()[object.getObjectID()]) {
+                                                case ID_KEY_PART_TWO:
+                                                    objectInteract(object, GameObject.ObjectType.ID_HAND.ordinal(),
+                                                            GameObject.ObjectType.ID_KEY_PART_TWO_INV.ordinal(),
+                                                            GameScene.SceneType.ID_INVENTORY.ordinal());
+                                                    break;
+                                                case ID_ARCADE_MACHINE_FINISHED_BACK:
+                                                    gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_BACK.ordinal(), spriteSheet);
+                                                    break;
+                                            }
                                             break;
                                     }
                                     break;
-                                case ID_CHEST:
-                                    switch (GameObject.ObjectType.values()[object.getObjectID()]) {
-                                        case ID_BATTERY:
-                                            objectInteract(object, GameObject.ObjectType.ID_HAND.ordinal(),
-                                                    GameObject.ObjectType.ID_BATTERY_INV.ordinal(),
-                                                    GameScene.SceneType.ID_INVENTORY.ordinal());
-                                            break;
-                                        case ID_CHEST_BACK:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_START.ordinal(), spriteSheet);
-                                            break;
-                                    }
-                                    break;
-                                case ID_LABYRINTH:
-                                    switch (GameObject.ObjectType.values()[object.getObjectID()]) {
-                                        case ID_LABYRINTH_BOX_BACK:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_LEFT.ordinal(), spriteSheet);
-                                            break;
-                                    }
-                                    break;
-                                case ID_LABYRINTH_FINISHED:
-                                    switch (GameObject.ObjectType.values()[object.getObjectID()]) {
-                                        case ID_KEY_PART_ONE:
-                                            objectInteract(object, GameObject.ObjectType.ID_HAND.ordinal(),
-                                                    GameObject.ObjectType.ID_KEY_PART_ONE_INV.ordinal(),
-                                                    GameScene.SceneType.ID_INVENTORY.ordinal());
-                                            break;
-                                        case ID_LABYRINTH_BOX_FINISHED_BACK:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_LEFT.ordinal(), spriteSheet);
-                                            break;
-                                    }
-                                    break;
-                                case ID_ARCADE:
-                                    switch (GameObject.ObjectType.values()[object.getObjectID()]) {
-                                        case ID_ARCADE_MACHINE_BACK:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_BACK.ordinal(), spriteSheet);
-                                            break;
-                                    }
-                                    break;
-                                case ID_ARCADE_FINISHED:
-                                    switch (GameObject.ObjectType.values()[object.getObjectID()]) {
-                                        case ID_KEY_PART_TWO:
-                                            objectInteract(object, GameObject.ObjectType.ID_HAND.ordinal(),
-                                                    GameObject.ObjectType.ID_KEY_PART_TWO_INV.ordinal(),
-                                                    GameScene.SceneType.ID_INVENTORY.ordinal());
-                                            break;
-                                        case ID_ARCADE_MACHINE_BACK:
-                                            gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_BACK.ordinal(), spriteSheet);
-                                            break;
-                                    }
-                                    break;
+                                }
                             }
-                            break;
                         }
                     }
-                }
-                return true;
-            case MotionEvent.ACTION_MOVE:
-                if (joystick.isPressed()){
-                    joystick.setActuators(event.getX(),event.getY());
-                }
-                return true;
-            case MotionEvent.ACTION_UP:
-                if (joystick.isPressed()){
-                    joystick.setPressed(false);
-                    joystick.resetActuator();
-                }
-                return true;
+                    touchesPerUpdate++;
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    if (joystick.isPressed()) {
+                        joystick.setActuators(event.getX(), event.getY());
+                    }
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    if (joystick.isPressed()) {
+                        joystick.setPressed(false);
+                        joystick.resetActuator();
+                    }
+                    if (gameScene.getSceneID() == GameScene.SceneType.ID_ARCADE.ordinal()) {
+                        if (arcade.onArcade((float) (swipeStartX / spriteSheet.scaleX), (float) (swipeStartY / spriteSheet.scaleY))) {
+                            float xDiff = event.getX() - swipeStartX;
+                            float yDiff = event.getY() - swipeStartY;
+                            if (Math.abs(xDiff) > Math.abs(yDiff)) {
+                                if (Math.abs(xDiff) > SWIPE_THRESHOLD) {
+                                    if (xDiff > 0) {
+                                        arcade.onSwipeRight((float) (swipeStartX / spriteSheet.scaleX), (float) (swipeStartY / spriteSheet.scaleY));
+                                    } else {
+                                        arcade.onSwipeLeft((float) (swipeStartX / spriteSheet.scaleX), (float) (swipeStartY / spriteSheet.scaleY));
+                                    }
+                                }
+                            } else {
+                                if (Math.abs(yDiff) > SWIPE_THRESHOLD) {
+                                    if (yDiff > 0) {
+                                        arcade.onSwipeDown((float) (swipeStartX / spriteSheet.scaleX), (float) (swipeStartY / spriteSheet.scaleY));
+                                    } else {
+                                        arcade.onSwipeUp((float) (swipeStartX / spriteSheet.scaleX), (float) (swipeStartY / spriteSheet.scaleY));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return true;
+            }
+        }
+        catch (Exception e){
+            e.printStackTrace();
         }
         return super.onTouchEvent(event);
     }
@@ -381,6 +427,7 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
             inventory.remove(object);
             gameObjects.remove(object);
 
+
             inventory.sort();
             itemFrame.posUpdate(handObject.getPosX());
 
@@ -420,10 +467,14 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
             player.draw(canvas,gameDisplay);
             joystick.draw(canvas);
         }
+        if (gameScene.getSceneID()== GameScene.SceneType.ID_ARCADE.ordinal()){
+            arcade.draw(canvas);
+        }
         performance.draw(canvas);
     }
 
     public void update() {
+        touchesPerUpdate = 0;
         if (gameScene.getSceneID()== GameScene.SceneType.ID_LABYRINTH.ordinal()) {
             joystick.update();
             player.update(tileMap, gameDisplay);
@@ -436,6 +487,17 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
                         GameObject.ObjectType.ID_LABYRINTH_BOX_FINISHED_BACK.ordinal(),
                         GameScene.SceneType.ID_LABYRINTH_FINISHED.ordinal());
                 gameScene.sceneChange(gameObjects,GameScene.SceneType.ID_LABYRINTH_FINISHED.ordinal(), spriteSheet);
+            }
+        }
+        if (gameScene.getSceneID()== GameScene.SceneType.ID_ARCADE.ordinal()) {
+            if(arcade.isArcadeCompleted()){
+                objectChange(GameObject.ObjectType.ID_ARCADE_MACHINE_WORKING.ordinal(),
+                        GameObject.ObjectType.ID_ARCADE_MACHINE_FINISHED.ordinal(),
+                        GameScene.SceneType.ID_LEFT.ordinal());
+                objectChange(GameObject.ObjectType.ID_ARCADE_MACHINE_BACK.ordinal(),
+                        GameObject.ObjectType.ID_ARCADE_MACHINE_FINISHED_BACK.ordinal(),
+                        GameScene.SceneType.ID_ARCADE_FINISHED.ordinal());
+                gameScene.sceneChange(gameObjects,GameScene.SceneType.ID_ARCADE_FINISHED.ordinal(), spriteSheet);
             }
         }
     }

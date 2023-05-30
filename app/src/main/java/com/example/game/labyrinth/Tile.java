@@ -39,7 +39,7 @@ public class Tile {
 
 
     public void draw(Canvas canvas){
-        sprite.draw(canvas,mapLocationRect.left,mapLocationRect.top);
+        sprite.drawTile(canvas,mapLocationRect.left,mapLocationRect.top);
     }
 
 
