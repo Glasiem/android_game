@@ -468,6 +468,7 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void draw(Canvas canvas) {
         super.draw(canvas);
+        gameScene.initSceneObjects(gameObjects);
         gameScene.draw(canvas);
         inventory.draw(canvas);
         itemFrame.draw(canvas);

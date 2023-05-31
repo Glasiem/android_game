@@ -16,7 +16,6 @@ public class GameScene {
     public void sceneChange(ArrayList<GameObject> gameObjects, int newSceneID, SpriteSheet spriteSheet) {
         setSceneID(newSceneID);
         setSprite(spriteSheet);
-        initSceneObjects(gameObjects);
     }
 
     public enum SceneType{
