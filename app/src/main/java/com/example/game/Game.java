@@ -272,9 +272,10 @@ public class Game extends SurfaceView implements SurfaceHolder.Callback {
                                                 case ID_DOOR:
                                                     if (objectInteract(object, GameObject.ObjectType.ID_FINAL_KEY_INV.ordinal(),
                                                             GameObject.ObjectType.ID_DOOR.ordinal(),
-                                                            GameScene.SceneType.ID_DOOR.ordinal()))
+                                                            GameScene.SceneType.ID_DOOR.ordinal())) {
                                                         objectDelete();
-                                                    gameCompleted = true;
+                                                        gameCompleted = true;
+                                                    }
                                                     break;
                                                 case ID_DOOR_TO_START:
                                                     gameScene.sceneChange(gameObjects, GameScene.SceneType.ID_START.ordinal(), spriteSheet);
